@@ -60,3 +60,15 @@ void RedisClient::disconnect()
         sockfd = -1; // reset socket file description
     }
 }
+
+int RedisClient::getPort() const {
+    return port;
+}
+
+int RedisClient::getSocketFd() const {
+    return sockfd;
+}
+
+std::string RedisClient::getHost() const {
+    return host;
+}

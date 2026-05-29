@@ -14,15 +14,18 @@ private:
     std::string host;
     int port;
     int sockfd;
-
+    
 public:
-    RedisClient();
     RedisClient(const std::string &host, int port);
-
+    
     ~RedisClient();
-
+    
     bool connectToServer();
     void disconnect();
+    
+    int getSocketFd() const;
+    int getPort() const;
+    std::string getHost() const;
 };
 
 #endif
