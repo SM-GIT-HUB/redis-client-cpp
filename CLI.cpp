@@ -33,7 +33,7 @@ void CLI::run()
 
     while (true)
     {
-        std::cout << redisClient.getHost() << ":" << redisClient.getPort() << ">";
+        std::cout << redisClient.getHost() << ":" << redisClient.getPort() << "> ";
         std::cout.flush();
 
         std::string line;
@@ -53,7 +53,24 @@ void CLI::run()
             std::cout << "Goodbye from your client.\n";
             break;
         }
+        else if (line == "help")
+        {
+            std::cout << "Displaying help\n";
+            continue;
+        }
 
-        std::cout << "Your input is: " << line << std::endl;
+        // split commands into tokens
+        std::vector<std::string> args = CommandHandler::splitArgs(line);
+
+        if (args.empty()) {
+            continue;
+        }
+
+        for (auto &s : args)
+        {
+            std::cout << s << " - ";
+        }
+
+        std::cout << std::endl;
     }
 }
