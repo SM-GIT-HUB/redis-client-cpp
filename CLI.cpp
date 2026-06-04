@@ -1,8 +1,6 @@
 #include "CLI.h"
 
-// helper to trim whitespace
-
-static std::string trim(const std::string &line)
+static std::string trim(const std::string &line) // helper to trim whitespace
 {
     // whitespace characters are: ' ', \t, \n, \r, \f, \v
 
@@ -70,7 +68,16 @@ void CLI::run()
         {
             std::cout << s << " - ";
         }
-
+  
         std::cout << std::endl;
+
+        std::string command = CommandHandler::buildRESPCommand(args);
+
+        if (!redisClient.sendCommand(command))
+        {
+            std::cerr << "(Error) failed to send command.\n";
+            break;
+        }
+        
     }
 }

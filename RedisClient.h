@@ -23,9 +23,11 @@ public:
     bool connectToServer();
     void disconnect();
     
-    int getSocketFd() const;
     int getPort() const;
+    int getSocketFd() const;
     std::string getHost() const;
+    
+    bool sendCommand(const std::string &command);
 };
 
 #endif

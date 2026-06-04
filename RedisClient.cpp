@@ -72,3 +72,13 @@ int RedisClient::getSocketFd() const {
 std::string RedisClient::getHost() const {
     return host;
 }
+
+bool RedisClient::sendCommand(const std::string &command)
+{
+    if (sockfd == -1) {
+        return false;
+    }
+
+    ssize_t sent = send(sockfd, command.c_str(), command.size(), 0);
+    return (sent == ssize_t(command.size()));
+}

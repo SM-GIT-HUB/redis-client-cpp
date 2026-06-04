@@ -1,5 +1,5 @@
-#include "CommandHandler.h"
 #include<regex>
+#include "CommandHandler.h"
 
 std::vector<std::string> CommandHandler::splitArgs(const std::string &input)
 {
@@ -24,4 +24,17 @@ std::vector<std::string> CommandHandler::splitArgs(const std::string &input)
     }
 
     return tokens;
+}
+
+std::string CommandHandler::buildRESPCommand(const std::vector<std::string> &args)
+{
+    std::ostringstream oss;
+    oss << "*" << args.size() << "\r\n"; // num of args
+
+    for (const auto &arg : args)
+    {
+        oss << "$" << arg.size() << "\r\n" << arg << "\r\n"; // len and value of argument
+    }
+
+    return oss.str();
 }
