@@ -73,12 +73,24 @@ std::string RedisClient::getHost() const {
     return host;
 }
 
-bool RedisClient::sendCommand(const std::string &command)
+bool RedisClient::sendCommand(const std::string &command) //sending actual data(bytes) to redis
 {
     if (sockfd == -1) {
         return false;
     }
 
-    ssize_t sent = send(sockfd, command.c_str(), command.size(), 0);
-    return (sent == ssize_t(command.size()));
+    size_t totalSent = 0;
+
+    while (totalSent < command.size())
+    {
+        ssize_t sent = send(sockfd, command.c_str() + totalSent, command.size() - totalSent, 0);
+
+        if (sent <= 0) {
+            return false;
+        }
+
+        totalSent += sent;
+    }
+
+    return true;
 }

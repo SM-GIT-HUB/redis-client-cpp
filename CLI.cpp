@@ -64,14 +64,9 @@ void CLI::run()
             continue;
         }
 
-        for (auto &s : args)
-        {
-            std::cout << s << " - ";
-        }
-  
-        std::cout << std::endl;
-
         std::string command = CommandHandler::buildRESPCommand(args);
+
+        std::cout << command;
 
         if (!redisClient.sendCommand(command))
         {
@@ -79,5 +74,10 @@ void CLI::run()
             break;
         }
         
+        std::string res = ResponseParser::parseResponse(redisClient.getSocketFd());
+
+        std::cout << res << std::endl;
     }
+
+    redisClient.disconnect();
 }
