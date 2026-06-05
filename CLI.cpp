@@ -1,5 +1,8 @@
 #include "CLI.h"
 
+#include <readline/history.h>
+#include <readline/readline.h>
+
 static std::string trim(const std::string &line) // helper to trim whitespace
 {
     // whitespace characters are: ' ', \t, \n, \r, \f, \v
@@ -31,14 +34,21 @@ void CLI::run()
 
     while (true)
     {
-        std::cout << redisClient.getHost() << ":" << redisClient.getPort() << "> ";
-        std::cout.flush();
+        std::string prompt = "\n" + redisClient.getHost() + ":" + std::to_string(redisClient.getPort()) + "> ";
 
-        std::string line;
+        char* input = readline(prompt.c_str());
 
-        if (!std::getline(std::cin, line)) {
+        if (!input) {
             break;
         }
+
+        std::string line(input);
+
+        if (!line.empty()) {
+            add_history(input);
+        }
+
+        free(input);
         
         line = trim(line);
 
