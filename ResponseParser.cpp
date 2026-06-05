@@ -1,8 +1,9 @@
 #include "ResponseParser.h"
 
 #include<string>
-#include<sys/socket.h>
 #include<iostream>
+#include<sstream>
+#include<sys/socket.h>
 
 static bool readChar(int sockfd, char &c) // read a single character from the socket
 {
@@ -27,8 +28,7 @@ static std::string readLine(int sockfd) // read a line of text from the socket u
 
         line.push_back(c);
     }
-
-    std::cout << line << "  line  " << std::endl;
+    
     return line;
 }
 
@@ -64,17 +64,63 @@ std::string ResponseParser::parseSimpleString(int sockfd)
 
 std::string ResponseParser::parseSimpleError(int sockfd)
 {
-    return readLine(sockfd);
+    return "(Error) " + readLine(sockfd);
 }
 
 std::string ResponseParser::parseInteger(int sockfd)
-{   return readLine(sockfd);
+{
+    return "(ineteger) " + readLine(sockfd);
 }
 
 std::string ResponseParser::parseBulkString(int sockfd)
-{   return readLine(sockfd);
+{
+    int len = std::stoi(readLine(sockfd));
+
+    if (len == -1) {
+        return "(nil)";
+    }
+
+    std::string bulk(len, '\0');
+
+    ssize_t totalRead = 0;
+
+    while (totalRead < len)
+    {
+        ssize_t r = recv(sockfd, &bulk[totalRead], len - totalRead, 0); // read bulk data from socket
+
+        if (r <= 0) {
+            return "(Error) incomplete bulk data.";
+        }
+
+        totalRead += r;
+    }
+
+    // consume trailing CRLF
+    char dummy;
+    readChar(sockfd, dummy);
+    readChar(sockfd, dummy);
+
+    return bulk;
 }
 
 std::string ResponseParser::parseArrays(int sockfd)
-{   return readLine(sockfd);
+{
+    int count = std::stoi(readLine(sockfd));
+    
+    if (count == -1) {
+        return "(nil)";
+    }
+
+    std::ostringstream oss;
+
+    for (int i = 0; i < count; i++)
+    {
+        oss << parseResponse(sockfd);
+
+        if (i != count - 1) {
+            oss << "\n";
+        }
+    }
+
+    return oss.str();
 }

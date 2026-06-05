@@ -46,7 +46,7 @@ void CLI::run()
             continue;
         }
 
-        if (line == "quit")
+        if (line == "quit" || line == "exit")
         {
             std::cout << "Goodbye from your client.\n";
             break;
@@ -65,8 +65,6 @@ void CLI::run()
         }
 
         std::string command = CommandHandler::buildRESPCommand(args);
-
-        std::cout << command;
 
         if (!redisClient.sendCommand(command))
         {
