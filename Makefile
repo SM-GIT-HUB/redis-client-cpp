@@ -1,4 +1,7 @@
 
+com:
+	g++ *.cpp -lreadline -o main
+
 run:
 	./main
 

@@ -1,5 +1,8 @@
 #include "CLI.h"
+#include "CommandHandler.h"
+#include "ResponseParser.h"
 
+#include<iostream>
 #include <readline/history.h>
 #include <readline/readline.h>
 
@@ -24,9 +27,16 @@ static std::string trim(const std::string &line) // helper to trim whitespace
 
 CLI::CLI(const std::string &host, int port) : redisClient(host, port) {}
 
-void CLI::run()
+void CLI::run(const std::vector<std::string>& commandArgs)
 {
     if (!redisClient.connectToServer()) {
+        return;
+    }
+
+    if (!commandArgs.empty()) // execute oneshot command
+    {
+        executeCommand(commandArgs);
+        redisClient.disconnect();
         return;
     }
 
@@ -74,18 +84,23 @@ void CLI::run()
             continue;
         }
 
-        std::string command = CommandHandler::buildRESPCommand(args);
-
-        if (!redisClient.sendCommand(command))
-        {
-            std::cerr << "(Error) failed to send command.\n";
-            break;
-        }
-        
-        std::string res = ResponseParser::parseResponse(redisClient.getSocketFd());
-
-        std::cout << res << std::endl;
+        executeCommand(args);
     }
 
     redisClient.disconnect();
+}
+
+void CLI::executeCommand(const std::vector<std::string>& args)
+{
+    std::string command = CommandHandler::buildRESPCommand(args);
+
+    if (!redisClient.sendCommand(command))
+    {
+        std::cerr << "(Error) failed to send command.\n";
+        return;
+    }
+
+    std::string res = ResponseParser::parseResponse(redisClient.getSocketFd());
+
+    std::cout << res << std::endl;
 }

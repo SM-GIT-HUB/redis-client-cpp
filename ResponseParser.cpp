@@ -1,8 +1,8 @@
 #include "ResponseParser.h"
 
 #include<string>
-#include<iostream>
 #include<sstream>
+#include<iostream>
 #include<sys/socket.h>
 
 static bool readChar(int sockfd, char &c) // read a single character from the socket

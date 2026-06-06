@@ -1,4 +1,6 @@
 #include<regex>
+#include<sstream>
+
 #include "CommandHandler.h"
 
 std::vector<std::string> CommandHandler::splitArgs(const std::string &input)
