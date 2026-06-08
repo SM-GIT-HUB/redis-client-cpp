@@ -25,12 +25,24 @@ static std::string trim(const std::string &line) // helper to trim whitespace
     return (start > end)? "" : line.substr(start, end - start + 1);
 }
 
-CLI::CLI(const std::string &host, int port) : redisClient(host, port) {}
+CLI::CLI(const std::string &host, int port, const std::string &username, const std::string &password) : redisClient(host, port), username(username), password(password) {}
 
 void CLI::run(const std::vector<std::string>& commandArgs)
 {
     if (!redisClient.connectToServer()) {
         return;
+    }
+
+    if (!password.empty())
+    {
+        std::vector<std::string> authArgs;
+
+        if (username.empty())
+            authArgs = {"AUTH", password};
+        else
+            authArgs = {"AUTH", username, password};
+
+        executeCommand(authArgs);
     }
 
     if (!commandArgs.empty()) // execute oneshot command
