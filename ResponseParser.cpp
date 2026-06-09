@@ -5,24 +5,24 @@
 #include<iostream>
 #include<sys/socket.h>
 
-static bool readChar(int sockfd, char &c) // read a single character from the socket
+static bool readChar(RedisClient &client, char &c)
 {
-    ssize_t r = recv(sockfd, &c, 1, 0);
+    ssize_t r = client.readBytes(&c, 1);
     return (r == 1);
 }
 
-static std::string readLine(int sockfd) // read a line of text from the socket until it encounters a carriage return
+static std::string readLine(RedisClient &client) // read a line of text from the socket until it encounters a carriage return
 {
     char c;
     std::string line;
     
-    while (readChar(sockfd, c))
+    while (readChar(client, c))
     {
         if (c == '\r')
         {
             // expect '\n' next; read and break;
 
-            readChar(sockfd, c);
+            readChar(client, c);
             break;
         }
 
@@ -32,49 +32,49 @@ static std::string readLine(int sockfd) // read a line of text from the socket u
     return line;
 }
 
-std::string ResponseParser::parseResponse(int sockfd)
+std::string ResponseParser::parseResponse(RedisClient &client)
 {
     char prefix;
 
-    if (!readChar(sockfd, prefix)) {
+    if (!readChar(client, prefix)) {
         return ("(Error) no response or connection closed.");
     }
 
     switch (prefix)
     {
         case '+' :
-            return parseSimpleString(sockfd);
+            return parseSimpleString(client);
         case '-' :
-            return parseSimpleError(sockfd);
+            return parseSimpleError(client);
         case ':' :
-            return parseInteger(sockfd);
+            return parseInteger(client);
         case '$' :
-            return parseBulkString(sockfd);
+            return parseBulkString(client);
         case '*' :
-            return parseArrays(sockfd);
+            return parseArrays(client);
         default:
             return "(Error) unknown reply type.";
     }
 }
 
-std::string ResponseParser::parseSimpleString(int sockfd)
+std::string ResponseParser::parseSimpleString(RedisClient &client)
 {
-    return readLine(sockfd);
+    return readLine(client);
 }
 
-std::string ResponseParser::parseSimpleError(int sockfd)
+std::string ResponseParser::parseSimpleError(RedisClient &client)
 {
-    return "(Error) " + readLine(sockfd);
+    return "(Error) " + readLine(client);
 }
 
-std::string ResponseParser::parseInteger(int sockfd)
+std::string ResponseParser::parseInteger(RedisClient &client)
 {
-    return "(ineteger) " + readLine(sockfd);
+    return "(integer) " + readLine(client);
 }
 
-std::string ResponseParser::parseBulkString(int sockfd)
+std::string ResponseParser::parseBulkString(RedisClient &client)
 {
-    int len = std::stoi(readLine(sockfd));
+    int len = std::stoi(readLine(client));
 
     if (len == -1) {
         return "(nil)";
@@ -86,7 +86,7 @@ std::string ResponseParser::parseBulkString(int sockfd)
 
     while (totalRead < len)
     {
-        ssize_t r = recv(sockfd, &bulk[totalRead], len - totalRead, 0); // read bulk data from socket
+        ssize_t r = client.readBytes(&bulk[totalRead], len - totalRead); // read bulk data from socket
 
         if (r <= 0) {
             return "(Error) incomplete bulk data.";
@@ -97,15 +97,15 @@ std::string ResponseParser::parseBulkString(int sockfd)
 
     // consume trailing CRLF
     char dummy;
-    readChar(sockfd, dummy);
-    readChar(sockfd, dummy);
+    readChar(client, dummy);
+    readChar(client, dummy);
 
     return bulk;
 }
 
-std::string ResponseParser::parseArrays(int sockfd)
+std::string ResponseParser::parseArrays(RedisClient &client)
 {
-    int count = std::stoi(readLine(sockfd));
+    int count = std::stoi(readLine(client));
     
     if (count == -1) {
         return "(nil)";
@@ -115,7 +115,7 @@ std::string ResponseParser::parseArrays(int sockfd)
 
     for (int i = 0; i < count; i++)
     {
-        oss << parseResponse(sockfd);
+        oss << parseResponse(client);
 
         if (i != count - 1) {
             oss << "\n";

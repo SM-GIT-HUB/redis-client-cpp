@@ -4,11 +4,11 @@
 #include<string>
 
 struct RedisURL {
+    int port = 6379;
+    std::string host;
     std::string scheme;
     std::string username;
     std::string password;
-    std::string host;
-    int port = 6379;
 };
 
 #endif

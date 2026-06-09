@@ -3,8 +3,8 @@
 #include "ResponseParser.h"
 
 #include<iostream>
-#include <readline/history.h>
-#include <readline/readline.h>
+#include<readline/history.h>
+#include<readline/readline.h>
 
 static std::string trim(const std::string &line) // helper to trim whitespace
 {
@@ -25,7 +25,7 @@ static std::string trim(const std::string &line) // helper to trim whitespace
     return (start > end)? "" : line.substr(start, end - start + 1);
 }
 
-CLI::CLI(const std::string &host, int port, const std::string &username, const std::string &password) : redisClient(host, port), username(username), password(password) {}
+CLI::CLI(const std::string &host, int port, const std::string &username, const std::string &password, bool useTLS) : redisClient(host, port, useTLS), username(username), password(password) {}
 
 void CLI::run(const std::vector<std::string>& commandArgs)
 {
@@ -85,7 +85,42 @@ void CLI::run(const std::vector<std::string>& commandArgs)
         }
         else if (line == "help")
         {
-            std::cout << "Displaying help\n";
+            std::cout
+                << "\nRedis CLI Client Help\n"
+                << "=====================\n\n"
+
+                << "Built-in Commands:\n"
+                << "  help              Show this help message\n"
+                << "  quit              Exit the client\n"
+                << "  exit              Exit the client\n\n"
+
+                << "Examples:\n"
+                << "  PING\n"
+                << "  SET name Soumik\n"
+                << "  GET name\n"
+                << "  DEL name\n"
+                << "  KEYS *\n"
+                << "  HSET user name Soumik\n"
+                << "  HGETALL user\n\n"
+
+                << "Quoted Strings:\n"
+                << "  SET name \"Soumik Majumder\"\n\n"
+
+                << "Connection Options:\n"
+                << "  -h <host>\n"
+                << "  -p <port>\n"
+                << "  -u <username>\n"
+                << "  -pass <password>\n"
+                << "  -url <redis-url>\n\n"
+
+                << "URL Examples:\n"
+                << "  redis://localhost:6379\n"
+                << "  redis://:password@localhost:6379\n"
+                << "  redis://default:password@localhost:6379\n"
+                << "  rediss://default:password@host:6379\n"
+
+                << std::endl;
+
             continue;
         }
 
@@ -112,7 +147,16 @@ void CLI::executeCommand(const std::vector<std::string>& args)
         return;
     }
 
-    std::string res = ResponseParser::parseResponse(redisClient.getSocketFd());
+    std::string res = ResponseParser::parseResponse(redisClient);
 
-    std::cout << res << std::endl;
+    if (args[0] == "AUTH")
+    {
+        if (res.find("(Error)") != std::string::npos)
+        {
+            std::cerr << res << std::endl;
+            return;
+        }
+    }
+    else
+        std::cout << res << std::endl;
 }

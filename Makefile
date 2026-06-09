@@ -1,12 +1,12 @@
 
 com:
-	g++ *.cpp -lreadline -o main
+	g++ *.cpp -lreadline -lssl -lcrypto -o main
 
 run:
 	./main
 
 crun:
-	g++ *.cpp -lreadline -o main && ./main
+	g++ *.cpp -lreadline -lssl -lcrypto -o main && ./main
 
 merge:
 	python3 merge.py

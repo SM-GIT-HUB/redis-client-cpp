@@ -4,8 +4,10 @@
 #include<cstring>
 #include<iostream>
 #include<unistd.h>
+#include<openssl/ssl.h>
+#include<openssl/err.h>
 
-RedisClient::RedisClient(const std::string &host, int port) : host(host), port(port), sockfd(-1) {}
+RedisClient::RedisClient(const std::string &host, int port, bool useTLS) : host(host), port(port), sockfd(-1), useTLS(useTLS), ctx(nullptr), ssl(nullptr) {}
 
 RedisClient::~RedisClient()
 {
@@ -54,6 +56,36 @@ bool RedisClient::connectToServer()
         return false; // if no connection was made
     }
 
+    if (useTLS)
+    {
+        SSL_library_init();
+        SSL_load_error_strings();
+
+        ctx = SSL_CTX_new(TLS_client_method());
+
+        if (!ctx)
+        {
+            std::cerr << "Failed to create SSL context\n";
+            return false;
+        }
+
+        ssl = SSL_new(ctx);
+
+        if (!ssl)
+        {
+            std::cerr << "Failed to create SSL object\n";
+            return false;
+        }
+
+        SSL_set_fd(ssl, sockfd);
+
+        if (SSL_connect(ssl) <= 0)
+        {
+            ERR_print_errors_fp(stderr);
+            return false;
+        }
+    }
+
     return true; // connection successful
 }
 
@@ -63,6 +95,13 @@ void RedisClient::disconnect()
     {
         close(sockfd); // close socket if connection failed
         sockfd = -1; // reset socket file description
+    }
+    
+    if (useTLS)
+    {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        SSL_CTX_free(ctx);
     }
 }
 
@@ -88,7 +127,13 @@ bool RedisClient::sendCommand(const std::string &command) //sending actual data(
 
     while (totalSent < command.size())
     {
-        ssize_t sent = send(sockfd, command.c_str() + totalSent, command.size() - totalSent, 0);
+        ssize_t sent = 0;
+
+        if (useTLS) {
+            sent = SSL_write(ssl, command.c_str() + totalSent, command.size() - totalSent);
+        }
+        else
+            sent = send(sockfd, command.c_str() + totalSent, command.size() - totalSent, 0);
 
         if (sent <= 0) {
             return false;
@@ -98,4 +143,13 @@ bool RedisClient::sendCommand(const std::string &command) //sending actual data(
     }
 
     return true;
+}
+
+int RedisClient::readBytes(char* buffer, int len)
+{
+    if (useTLS) {
+        return SSL_read(ssl, buffer, len);
+    }
+
+    return recv(sockfd, buffer, len, 0);
 }

@@ -1,9 +1,9 @@
 #include "CLI.h"
+#include "RedisUrlParser.h"
 
 #include<string>
 #include<vector>
 #include<iostream>
-#include "RedisUrlParser.h"
 
 int main(int argc, char *argv[])
 {
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
         ++i;
     }
 
-    CLI cli(host, port, username, password);
+    CLI cli(host, port, username, password, useTLS);
     cli.run(commandArgs); // execute oneshot command with commandArgs
     
     return 0;
